@@ -1,4 +1,4 @@
-# PSM I — Practice Tests
+# PSM I - Practice Tests
 
 ## 🙏 Data source & credits
 
@@ -26,7 +26,7 @@ No build step, no npm, no framework - just open `index.html`.
 
 ## Features
 
-- **250 questions, fetched live** from the upstream repository — the bank stays up to date automatically.
+- **250 questions, fetched live** from the upstream repository - the bank stays up to date automatically.
 - **Configurable test** - number of questions (default **5**) and pass rate (default **90 %**).
 - **Immediate feedback** - after each answer the correct options are highlighted and the choice is locked.
 - **Result screen** - score ring, pass/fail verdict, statistics and a review of every question.
