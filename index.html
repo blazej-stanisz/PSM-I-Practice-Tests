@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PSM I — Practice Tests</title>
+<meta name="description" content="Interactive practice tests for the Professional Scrum Master I (PSM I) certification.">
+<meta name="theme-color" content="#0b0f17">
+<meta name="color-scheme" content="dark light">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <div class="logo">🎯</div>
+      <div>
+        <h1>PSM I — Practice Tests</h1>
+        <p id="poolInfo">Loading question bank…</p>
+      </div>
+    </div>
+    <div class="themes" role="group" aria-label="Colour theme">
+      <button data-theme-btn="dark" aria-pressed="false" title="Dark"><span aria-hidden="true">🌙</span><span class="lbl">Dark</span></button>
+      <button data-theme-btn="sepia" aria-pressed="false" title="Sepia"><span aria-hidden="true">📜</span><span class="lbl">Sepia</span></button>
+      <button data-theme-btn="light" aria-pressed="false" title="Light"><span aria-hidden="true">☀️</span><span class="lbl">Light</span></button>
+    </div>
+  </header>
+
+  <!-- ===== SETUP SCREEN ===== -->
+  <section id="screen-setup" class="card fade">
+    <h2>Test setup</h2>
+    <p class="sub">Choose the number of questions and the pass rate, then start the test.</p>
+
+    <div class="grid">
+      <label class="field">
+        <span>Number of questions <em class="field-val" id="countMax"></em></span>
+        <input type="number" id="count" min="1" value="5" step="1">
+        <div class="chips">
+          <button class="chip" data-count="5">5</button>
+          <button class="chip" data-count="10">10</button>
+          <button class="chip" data-count="20">20</button>
+          <button class="chip" data-count="30">30</button>
+          <button class="chip" data-count="80">80</button>
+        </div>
+      </label>
+
+      <label class="field">
+        <span>Pass rate <em class="field-val" id="passVal">90%</em></span>
+        <input type="range" id="pass" min="50" max="100" step="1" value="90">
+        <div class="chips">
+          <button class="chip" data-pass="70">70%</button>
+          <button class="chip" data-pass="85">85%</button>
+          <button class="chip" data-pass="90">90%</button>
+          <button class="chip" data-pass="100">100%</button>
+        </div>
+      </label>
+    </div>
+
+    <div id="loadBox" class="loadbox">
+      <span class="spinner" aria-hidden="true"></span>
+      <span id="loadMsg">Fetching questions from GitHub…</span>
+    </div>
+
+    <p id="setupErr" class="err hidden"></p>
+    <button class="btn btn-primary" id="startBtn" disabled>▶ Start Test</button>
+    <button class="btn btn-ghost hidden" id="retryBtn" style="width:100%;margin-top:10px">↻ Retry</button>
+  </section>
+
+  <!-- ===== QUESTION SCREEN ===== -->
+  <section id="screen-quiz" class="card hidden">
+    <div class="progress-head">
+      <span id="progLabel">Question 1 of 5</span>
+      <span id="progScore">Correct: 0</span>
+    </div>
+    <div class="bar"><i id="progBar"></i></div>
+
+    <span class="badge" id="qBadge">Single answer</span>
+    <p class="qtext" id="qText"></p>
+
+    <form class="options" id="qOptions"></form>
+
+    <div id="verdict" class="verdict hidden"></div>
+
+    <div class="actions">
+      <button class="btn btn-primary" id="checkBtn" style="margin-top:0">Check answer</button>
+      <button class="btn btn-primary hidden" id="nextBtn" style="margin-top:0">Next →</button>
+      <button class="btn btn-ghost" id="abortBtn">Quit</button>
+    </div>
+  </section>
+
+  <!-- ===== RESULT SCREEN ===== -->
+  <section id="screen-result" class="card hidden">
+    <div class="score">
+      <div class="ring" id="ring"><div><b id="ringPct">0%</b><small id="ringSub">0 / 0</small></div></div>
+      <p class="result-title" id="resTitle"></p>
+      <p class="sub" id="resSub" style="margin-bottom:0"></p>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><b id="stCorrect">0</b><span>Correct</span></div>
+      <div class="stat"><b id="stWrong">0</b><span>Incorrect</span></div>
+      <div class="stat"><b id="stPass">0%</b><span>Pass rate</span></div>
+    </div>
+
+    <div class="review">
+      <h3>Answer review</h3>
+      <div id="reviewList"></div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" id="againBtn" style="margin-top:0">↻ New test</button>
+      <button class="btn btn-ghost" id="setupBtn">⚙ Change settings</button>
+    </div>
+  </section>
+
+  <footer>
+    Questions are fetched at runtime from
+    <a href="https://github.com/Ditectrev/Scrum-Master-I-PSM-I-Practice-Tests-Exams-Questions-Answers" target="_blank" rel="noopener noreferrer">Ditectrev/Scrum-Master-I-PSM-I-Practice-Tests-Exams-Questions-Answers</a>.
+    Thanks for sharing them! · Good luck with your exam!
+  </footer>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  /* ---------- Remote question source ---------- */
+  const REPO = 'Ditectrev/Scrum-Master-I-PSM-I-Practice-Tests-Exams-Questions-Answers';
+  const BRANCH = 'main';
+  const SOURCES = [
+    `https://raw.githubusercontent.com/${REPO}/${BRANCH}/README.md`,
+    `https://cdn.jsdelivr.net/gh/${REPO}@${BRANCH}/README.md`
+  ];
+  const CACHE_KEY = 'psm1-bank-v1';
+  const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 h
+
+  /* ---------- Theme ---------- */
+  const THEME_KEY = 'psm1-theme';
+  const THEMES = ['dark', 'sepia', 'light'];
+  const THEME_COLORS = { dark: '#0b0f17', sepia: '#f3e7d3', light: '#f4f6fb' };
+  const setTheme = (t) => {
+    const theme = THEMES.includes(t) ? t : 'dark';
+    document.documentElement.dataset.theme = theme;
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', THEME_COLORS[theme]);
+    try { localStorage.setItem(THEME_KEY, theme); } catch (e) {}
+    document.querySelectorAll('[data-theme-btn]').forEach((b) =>
+      b.setAttribute('aria-pressed', String(b.dataset.themeBtn === theme)));
+  };
+  document.querySelectorAll('[data-theme-btn]').forEach((b) =>
+    b.addEventListener('click', () => setTheme(b.dataset.themeBtn)));
+  let saved = null;
+  try { saved = localStorage.getItem(THEME_KEY); } catch (e) {}
+  setTheme(saved || 'dark');
+
+  /* ---------- Elements ---------- */
+  const $ = (id) => document.getElementById(id);
+  const screens = { setup: $('screen-setup'), quiz: $('screen-quiz'), result: $('screen-result') };
+  const show = (name) => {
+    Object.entries(screens).forEach(([k, el]) => {
+      el.classList.toggle('hidden', k !== name);
+      if (k === name) { el.classList.remove('fade'); void el.offsetWidth; el.classList.add('fade'); }
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  /* ---------- State ---------- */
+  let POOL = [];
+  let quiz = null;
+
+  const shuffle = (arr) => {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  };
+
+  /* ---------- Markdown → questions ----------
+     Source layout:
+       ### Question text
+       - [ ] wrong option
+       - [x] correct option
+     Anything else (table of contents, promo sections) is ignored.        */
+  const clean = (s) => s
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, '')          // images
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')       // links → label
+    .replace(/`([^`]*)`/g, '$1')                   // inline code
+    .replace(/\*\*([^*]+)\*\*/g, '$1')             // bold
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  function parseBank(md) {
+    const questions = [];
+    let cur = null;
+    const push = () => {
+      if (!cur) return;
+      const nCorrect = cur.options.filter((o) => o.correct).length;
+      if (cur.text && cur.options.length >= 2 && nCorrect >= 1) {
+        cur.multi = nCorrect > 1;
+        cur.id = questions.length + 1;
+        questions.push(cur);
+      }
+      cur = null;
+    };
+
+    md.split(/\r?\n/).forEach((line) => {
+      if (/^###\s+/.test(line)) {
+        push();
+        cur = { id: 0, text: clean(line.replace(/^###\s+/, '')), multi: false, options: [] };
+        return;
+      }
+      if (/^##?\s+/.test(line)) { push(); return; }  // a new top-level section ends the block
+      if (!cur) return;
+      const m = /^\s*[-*]\s+\[([ xX])\]\s+(.+)$/.exec(line);
+      if (m) cur.options.push({ text: clean(m[2]), correct: m[1].toLowerCase() === 'x' });
+    });
+    push();
+    return questions;
+  }
+
+  /* ---------- Cache ---------- */
+  const readCache = () => {
+    try {
+      const raw = localStorage.getItem(CACHE_KEY);
+      if (!raw) return null;
+      const c = JSON.parse(raw);
+      return c && typeof c.md === 'string' && c.md.length ? c : null;
+    } catch (e) { return null; }
+  };
+  const writeCache = (md) => {
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify({ at: Date.now(), md })); } catch (e) {}
+  };
+
+  /* ---------- Loading ---------- */
+  const loadBox = $('loadBox'), loadMsg = $('loadMsg'), setupErr = $('setupErr'), retryBtn = $('retryBtn');
+
+  function poolReady(questions, note) {
+    POOL = questions;
+    $('poolInfo').textContent = `Question bank: ${POOL.length} questions`;
+    $('countMax').textContent = `max ${POOL.length}`;
+    $('count').max = POOL.length;
+    if (Number($('count').value) > POOL.length) $('count').value = POOL.length;
+    loadBox.className = 'loadbox ok';
+    loadMsg.textContent = note;
+    setupErr.classList.add('hidden');
+    retryBtn.classList.add('hidden');
+    $('startBtn').disabled = false;
+  }
+
+  function poolFailed(reason) {
+    $('poolInfo').textContent = 'Question bank unavailable';
+    loadBox.className = 'loadbox bad';
+    loadMsg.textContent = 'Could not download the questions.';
+    setupErr.classList.remove('hidden');
+    setupErr.textContent = reason + ' The questions are downloaded from GitHub, so an internet connection is required.';
+    retryBtn.classList.remove('hidden');
+    $('startBtn').disabled = true;
+  }
+
+  async function fetchMarkdown() {
+    let lastErr = null;
+    for (const url of SOURCES) {
+      try {
+        const r = await fetch(url, { cache: 'no-cache', mode: 'cors' });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const md = await r.text();
+        if (md.length < 1000) throw new Error('unexpected response');
+        return md;
+      } catch (e) { lastErr = e; }
+    }
+    throw lastErr || new Error('all sources failed');
+  }
+
+  async function loadPool() {
+    loadBox.className = 'loadbox';
+    loadMsg.textContent = 'Fetching questions from GitHub…';
+    setupErr.classList.add('hidden');
+    retryBtn.classList.add('hidden');
+    $('startBtn').disabled = true;
+
+    const cached = readCache();
+    const fresh = cached && (Date.now() - cached.at) < CACHE_TTL;
+
+    if (fresh) {
+      const qs = parseBank(cached.md);
+      if (qs.length) {
+        poolReady(qs, 'Loaded from your local cache · source: Ditectrev on GitHub');
+        refreshInBackground();
+        return;
+      }
+    }
+
+    try {
+      const md = await fetchMarkdown();
+      const qs = parseBank(md);
+      if (!qs.length) throw new Error('no questions found in the source file');
+      writeCache(md);
+      poolReady(qs, 'Downloaded from Ditectrev on GitHub · cached for offline use');
+    } catch (err) {
+      if (cached) {
+        const qs = parseBank(cached.md);
+        if (qs.length) {
+          poolReady(qs, 'Offline — using the cached copy of the questions');
+          return;
+        }
+      }
+      poolFailed('Reason: ' + ((err && err.message) || err) + '.');
+    }
+  }
+
+  async function refreshInBackground() {
+    try {
+      const md = await fetchMarkdown();
+      const qs = parseBank(md);
+      if (qs.length) {
+        writeCache(md);
+        if (!quiz && POOL.length !== qs.length) poolReady(qs, 'Updated from Ditectrev on GitHub');
+      }
+    } catch (e) { /* keep the cached bank */ }
+  }
+
+  retryBtn.addEventListener('click', loadPool);
+  loadPool();
+
+  /* ---------- Setup controls ---------- */
+  const passInput = $('pass'), countInput = $('count');
+  passInput.addEventListener('input', () => { $('passVal').textContent = passInput.value + '%'; });
+  document.querySelectorAll('[data-count]').forEach((c) => c.addEventListener('click', () => {
+    countInput.value = Math.min(Number(c.dataset.count), POOL.length || Number(c.dataset.count));
+  }));
+  document.querySelectorAll('[data-pass]').forEach((c) => c.addEventListener('click', () => {
+    passInput.value = c.dataset.pass;
+    $('passVal').textContent = c.dataset.pass + '%';
+  }));
+
+  /* ---------- Start ---------- */
+  $('startBtn').addEventListener('click', () => {
+    const err = $('setupErr');
+    let n = Math.floor(Number(countInput.value));
+    const pass = Math.floor(Number(passInput.value));
+    if (!POOL.length) return;
+    if (!Number.isFinite(n) || n < 1) {
+      err.textContent = 'Enter the number of questions (minimum 1).';
+      err.classList.remove('hidden');
+      return;
+    }
+    if (n > POOL.length) n = POOL.length;
+    countInput.value = n;
+    err.classList.add('hidden');
+
+    quiz = {
+      questions: shuffle(POOL).slice(0, n).map((q) => ({ ...q, options: shuffle(q.options) })),
+      pass, idx: 0, correct: 0, answers: [], locked: false
+    };
+    renderQuestion();
+    show('quiz');
+  });
+
+  /* ---------- Render a question ---------- */
+  function renderQuestion() {
+    const q = quiz.questions[quiz.idx];
+    const total = quiz.questions.length;
+    quiz.locked = false;
+
+    $('progLabel').textContent = `Question ${quiz.idx + 1} of ${total}`;
+    $('progScore').textContent = `Correct: ${quiz.correct}`;
+    $('progBar').style.width = (quiz.idx / total) * 100 + '%';
+
+    const nCorrect = q.options.filter((o) => o.correct).length;
+    $('qBadge').textContent = q.multi ? `Select ${nCorrect} answers` : 'Single answer';
+    $('qText').textContent = q.text;
+
+    const form = $('qOptions');
+    form.classList.remove('locked');
+    form.innerHTML = '';
+    q.options.forEach((o, i) => {
+      const lab = document.createElement('label');
+      lab.className = 'opt';
+      lab.dataset.i = i;
+      const inp = document.createElement('input');
+      inp.type = q.multi ? 'checkbox' : 'radio';
+      inp.name = 'opt';
+      inp.value = String(i);
+      const span = document.createElement('span');
+      span.textContent = o.text;
+      lab.append(inp, span);
+      inp.addEventListener('change', () => {
+        form.querySelectorAll('.opt').forEach((el) => {
+          el.classList.toggle('picked', el.querySelector('input').checked);
+        });
+      });
+      form.appendChild(lab);
+    });
+
+    $('verdict').classList.add('hidden');
+    $('checkBtn').classList.remove('hidden');
+    $('nextBtn').classList.add('hidden');
+    $('nextBtn').textContent = quiz.idx === total - 1 ? 'Finish test →' : 'Next →';
+  }
+
+  /* ---------- Check the answer ---------- */
+  $('checkBtn').addEventListener('click', () => {
+    if (quiz.locked) return;
+    const q = quiz.questions[quiz.idx];
+    const form = $('qOptions');
+    const picked = [...form.querySelectorAll('input')].map((i) => i.checked);
+
+    if (!picked.some(Boolean)) {
+      const v = $('verdict');
+      v.classList.remove('hidden');
+      v.className = 'verdict bad';
+      v.textContent = '⚠ Select at least one answer.';
+      return;
+    }
+
+    quiz.locked = true;
+    form.classList.add('locked');
+    form.querySelectorAll('input').forEach((i) => { i.disabled = true; });
+
+    const isCorrect = q.options.every((o, i) => o.correct === picked[i]);
+    if (isCorrect) quiz.correct++;
+
+    form.querySelectorAll('.opt').forEach((el, i) => {
+      const o = q.options[i];
+      el.classList.remove('picked');
+      if (o.correct) {
+        el.classList.add('correct');
+        el.insertAdjacentHTML('beforeend', '<span class="mark">✓</span>');
+      } else if (picked[i]) {
+        el.classList.add('wrong');
+        el.insertAdjacentHTML('beforeend', '<span class="mark">✕</span>');
+      }
+    });
+
+    const v = $('verdict');
+    v.classList.remove('hidden');
+    v.className = 'verdict ' + (isCorrect ? 'ok' : 'bad');
+    v.textContent = isCorrect
+      ? '✓ Correct! Well done.'
+      : '✕ Incorrect. The correct answers are highlighted in green.';
+
+    quiz.answers.push({
+      text: q.text,
+      correct: isCorrect,
+      picked: q.options.filter((_, i) => picked[i]).map((o) => o.text),
+      right: q.options.filter((o) => o.correct).map((o) => o.text)
+    });
+
+    $('progScore').textContent = `Correct: ${quiz.correct}`;
+    $('progBar').style.width = ((quiz.idx + 1) / quiz.questions.length) * 100 + '%';
+    $('checkBtn').classList.add('hidden');
+    $('nextBtn').classList.remove('hidden');
+    $('nextBtn').focus();
+  });
+
+  /* ---------- Next question ---------- */
+  $('nextBtn').addEventListener('click', () => {
+    if (quiz.idx < quiz.questions.length - 1) { quiz.idx++; renderQuestion(); }
+    else renderResult();
+  });
+
+  $('abortBtn').addEventListener('click', () => {
+    if (confirm('Quit the test?')) { quiz = null; show('setup'); }
+  });
+
+  /* ---------- Result ---------- */
+  function renderResult() {
+    const total = quiz.questions.length;
+    const pct = Math.round((quiz.correct / total) * 100);
+    const passed = pct >= quiz.pass;
+    const tone = passed ? 'var(--ok)' : 'var(--bad)';
+
+    $('ring').style.background = `conic-gradient(${tone} ${pct}%, var(--surface-2) 0)`;
+    $('ringPct').textContent = pct + '%';
+    $('ringPct').style.color = tone;
+    $('ringSub').textContent = `${quiz.correct} / ${total}`;
+    $('resTitle').textContent = passed ? '🎉 Test passed!' : '❌ Test failed';
+    $('resTitle').style.color = tone;
+    $('resSub').textContent = passed
+      ? `You scored ${pct}% against a required pass rate of ${quiz.pass}%. Great job!`
+      : `You scored ${pct}% against a required pass rate of ${quiz.pass}%. ` +
+        `You are ${quiz.pass - pct} percentage points short — give it another try.`;
+
+    $('stCorrect').textContent = quiz.correct;
+    $('stCorrect').style.color = 'var(--ok)';
+    $('stWrong').textContent = total - quiz.correct;
+    $('stWrong').style.color = 'var(--bad)';
+    $('stPass').textContent = quiz.pass + '%';
+
+    const list = $('reviewList');
+    list.innerHTML = '';
+    quiz.answers.forEach((a, i) => {
+      const wrap = document.createElement('div');
+      wrap.className = 'rev-item ' + (a.correct ? 'ok' : 'bad');
+      const ic = document.createElement('span');
+      ic.className = 'ic';
+      ic.textContent = a.correct ? '✓' : '✕';
+      const body = document.createElement('div');
+      const t = document.createElement('div');
+      t.textContent = `${i + 1}. ${a.text}`;
+      body.appendChild(t);
+      if (!a.correct) {
+        const det = document.createElement('details');
+        det.className = 'rev';
+        const sum = document.createElement('summary');
+        sum.textContent = 'Show the correct answer';
+        const ans = document.createElement('div');
+        ans.className = 'ans';
+        const right = document.createElement('div');
+        right.innerHTML = 'Correct: <b></b>';
+        right.querySelector('b').textContent = a.right.join(' • ');
+        const mine = document.createElement('div');
+        mine.textContent = 'Your answer: ' + (a.picked.join(' • ') || '—');
+        ans.append(right, mine);
+        det.append(sum, ans);
+        body.appendChild(det);
+      }
+      wrap.append(ic, body);
+      list.appendChild(wrap);
+    });
+
+    show('result');
+  }
+
+  $('againBtn').addEventListener('click', () => $('startBtn').click());
+  $('setupBtn').addEventListener('click', () => show('setup'));
+})();
+</script>
+</body>
+</html>
