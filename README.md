@@ -31,7 +31,7 @@ This repository **does not contain, copy or redistribute any of those questions*
 directly from Ditectrev's repository in your browser, at runtime, every time the app loads. This project only
 provides the user interface.
 
-If you find the material useful, please support the original authors — they sell it in EPUB/PDF form and run a
+If you find the material useful, please support the original authors - they sell it in EPUB/PDF form and run a
 matching Udemy course; the links are in [their README](https://github.com/Ditectrev/Scrum-Master-I-PSM-I-Practice-Tests-Exams-Questions-Answers#-support).
 ⭐ A star on their repository costs nothing and helps a lot.
 
