@@ -33,7 +33,7 @@ provides the user interface.
 
 If you find the material useful, please support the original authors - they sell it in EPUB/PDF form and run a
 matching Udemy course; the links are in [their README](https://github.com/Ditectrev/Scrum-Master-I-PSM-I-Practice-Tests-Exams-Questions-Answers#-support).
-⭐ A star on their repository costs nothing and helps a lot.
+A star on their repository costs nothing and helps a lot.
 
 ---
 
