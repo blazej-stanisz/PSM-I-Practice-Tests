@@ -1,6 +1,26 @@
 # PSM I - Practice Tests
 
-## 🙏 Data source & credits
+A zero-dependency, single-page practice-test app for the **Professional Scrum Master I (PSM I)** certification.
+
+No build step, no npm, no framework
+
+**Just open** https://blazej-stanisz.github.io/PSM-I-Practice-Tests/
+
+---
+
+## Features
+
+- **250 questions, fetched live** from the upstream repository - the bank stays up to date automatically.
+- **Configurable test** - number of questions (default **5**) and pass rate (default **90 %**).
+- **Immediate feedback** - after each answer the correct options are highlighted and the choice is locked.
+- **Result screen** - score ring, pass/fail verdict, statistics and a review of every question.
+- **Three themes** - Dark (default), Sepia, Light; stored in `localStorage`.
+- **Offline-friendly** - the downloaded source is cached in `localStorage`, so a network hiccup doesn't stop you.
+- **Randomised twice** - both question order and option order are shuffled (Fisher–Yates).
+
+---
+
+## Data source & credits
 
 **All exam questions used by this app come from the
 [Ditectrev/Scrum-Master-I-PSM-I-Practice-Tests-Exams-Questions-Answers](https://github.com/Ditectrev/Scrum-Master-I-PSM-I-Practice-Tests-Exams-Questions-Answers)
@@ -14,25 +34,6 @@ provides the user interface.
 If you find the material useful, please support the original authors — they sell it in EPUB/PDF form and run a
 matching Udemy course; the links are in [their README](https://github.com/Ditectrev/Scrum-Master-I-PSM-I-Practice-Tests-Exams-Questions-Answers#-support).
 ⭐ A star on their repository costs nothing and helps a lot.
-
----
-
-A zero-dependency, single-page practice-test app for the **Professional Scrum Master I (PSM I)** certification.
-No build step, no npm, no framework - just open `index.html`.
-
-**Live demo:** go to URL https://blazej-stanisz.github.io/PSM-I-Practice-Tests/
-
----
-
-## Features
-
-- **250 questions, fetched live** from the upstream repository - the bank stays up to date automatically.
-- **Configurable test** - number of questions (default **5**) and pass rate (default **90 %**).
-- **Immediate feedback** - after each answer the correct options are highlighted and the choice is locked.
-- **Result screen** - score ring, pass/fail verdict, statistics and a review of every question.
-- **Three themes** - Dark (default), Sepia, Light; stored in `localStorage`.
-- **Offline-friendly** - the downloaded source is cached in `localStorage`, so a network hiccup doesn't stop you.
-- **Randomised twice** - both question order and option order are shuffled (Fisher–Yates).
 
 ---
 
